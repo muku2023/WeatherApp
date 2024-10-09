@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_navigation"
+    app:startDestination="@id/weatherForecastListFragment">
+
+    <fragment
+        android:id="@+id/weatherForecastListFragment"
+        android:name="com.mlb.weatherapp.ui.screens.fragments.weatherList.WeatherForecastListFragment"
+        android:label="Weather Forecasts">
+        <action
+            android:id="@+id/to_weather_details"
+            app:destination="@id/weatherDetailsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/weatherDetailsFragment"
+        android:name="com.mlb.weatherapp.ui.screens.fragments.weatherDetails.WeatherDetailsFragment"
+        android:label="Weather Details">
+        <argument
+            android:name="forecast_data"
+            app:argType="com.mlb.weatherapp.model.WeatherInfo" />
+    </fragment>
+</navigation>

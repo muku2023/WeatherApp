@@ -1,7 +1,6 @@
 package com.mlb.weatherapp.utility
 
 import android.annotation.SuppressLint
-import androidx.compose.ui.text.capitalize
 import java.util.Locale
 import kotlin.math.round
 

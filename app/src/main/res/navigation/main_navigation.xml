@@ -7,17 +7,6 @@
     <fragment
         android:id="@+id/weatherForecastListFragment"
         android:name="com.mlb.weatherapp.ui.screens.fragments.weatherList.WeatherForecastListFragment"
-        android:label="Weather Forecasts">
-        <action
-            android:id="@+id/to_weather_details"
-            app:destination="@id/weatherDetailsFragment" />
-    </fragment>
-    <fragment
-        android:id="@+id/weatherDetailsFragment"
-        android:name="com.mlb.weatherapp.ui.screens.fragments.weatherDetails.WeatherDetailsFragment"
-        android:label="Weather Details">
-        <argument
-            android:name="forecast_data"
-            app:argType="com.mlb.weatherapp.model.WeatherInfo" />
+        android:label="Weather Forecast">
     </fragment>
 </navigation>

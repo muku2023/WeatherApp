@@ -1,16 +1,19 @@
 package com.mlb.weatherapp.di.module
 
+import android.app.Application
 import com.mlb.weatherapp.data.ApiService
 import com.mlb.weatherapp.data.ApiUrl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Converter
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.io.File
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
@@ -42,21 +45,51 @@ class NetworkModule {
         return HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY)
     }
 
+    @Singleton
+    @Provides
+    fun provideCache(application: Application): Cache {
+        // Specify the cache size (10 MB in this example) and the cache directory
+        val cacheSize = 10 * 1024 * 1024 // 10 MiB
+        val cacheDirectory = File(application.cacheDir, "http_cache")
+        return Cache(cacheDirectory, cacheSize.toLong())
+    }
+
     /**
      * Provides custom OkkHttp
      */
+
     @Singleton
     @Provides
-    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
-        val okHttpClient = OkHttpClient().newBuilder()
+    fun provideOkHttpClient(cache: Cache, loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
+        return OkHttpClient.Builder()
+            .cache(cache) // Add the cache to OkHttpClient
+            .addInterceptor { chain ->
+                val request = chain.request()
 
-        okHttpClient.callTimeout(40, TimeUnit.SECONDS)
-        okHttpClient.connectTimeout(40, TimeUnit.SECONDS)
-        okHttpClient.readTimeout(40, TimeUnit.SECONDS)
-        okHttpClient.writeTimeout(40, TimeUnit.SECONDS)
-        okHttpClient.addInterceptor(loggingInterceptor)
-        okHttpClient.build()
-        return okHttpClient.build()
+                // Check if we have a network connection
+                val isNetworkAvailable = true
+
+                val finalRequest = if (isNetworkAvailable) {
+                    request.newBuilder()
+                        .header("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+                        .build()
+                } else {
+                    request.newBuilder()
+                        .header("Cache-Control", "public, only-if-cached, max-stale=604800") // Cached for up to a week
+                        .build()
+                }
+
+                val response = chain.proceed(finalRequest)
+                response.newBuilder()
+                    .header("Cache-Control", response.cacheControl.toString()) // Pass cache control headers
+                    .build()
+            }
+            .callTimeout(40, TimeUnit.SECONDS)
+            .connectTimeout(40, TimeUnit.SECONDS)
+            .readTimeout(40, TimeUnit.SECONDS)
+            .writeTimeout(40, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
+            .build()
     }
 
     /**

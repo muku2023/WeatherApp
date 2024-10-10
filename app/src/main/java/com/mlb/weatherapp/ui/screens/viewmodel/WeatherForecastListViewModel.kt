@@ -1,4 +1,4 @@
-package com.mlb.weatherapp.ui.screens.fragments.weatherList
+package com.mlb.weatherapp.ui.screens.viewmodel
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -15,11 +15,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
 import javax.inject.Inject
-import com.mlb.weatherapp.utility.StringUtility
 import com.mlb.weatherapp.utility.StringUtility.Companion.toTitleCase
 
 

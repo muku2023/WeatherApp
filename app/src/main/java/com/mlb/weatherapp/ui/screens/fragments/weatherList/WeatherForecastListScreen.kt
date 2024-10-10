@@ -5,6 +5,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,11 +21,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,10 +34,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.google.gson.Gson
 import com.mlb.weatherapp.model.WeatherInfo
 import com.mlb.weatherapp.ui.base.UiState
+import com.mlb.weatherapp.ui.components.Toolbar
+import com.mlb.weatherapp.ui.screens.fragments.weatherDetails.WeatherDetailsScreen
 import com.mlb.weatherapp.ui.theme.ThemeColor
-import com.mlb.weatherapp.ui.screens.fragments.weatherList.WeatherForecastListFragmentDirections.toWeatherDetails
+import com.mlb.weatherapp.ui.screens.viewmodel.WeatherForecastListViewModel
 import com.mlb.weatherapp.utility.StringUtility.Companion.getCardinalDirection
 import com.mlb.weatherapp.utility.StringUtility.Companion.getWindSpeed
 import com.mlb.weatherapp.utility.StringUtility.Companion.kelvinToFahrenheit
@@ -45,46 +53,52 @@ import com.mlb.weatherapp.utility.StringUtility.Companion.toTitleCase
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun WeatherForecastSearch(viewModel: WeatherForecastListViewModel, navController: NavController) {
-    var zipCode by remember { mutableStateOf("") }
-    var showWeather by remember { mutableStateOf(false) }
-
+    var zipCode by rememberSaveable { mutableStateOf("") }
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = ThemeColor.primary()
     )
     {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // TextField for zip code input
-            OutlinedTextField(
-                value = zipCode,
-                onValueChange = { zipCode = it },
-                label = { Text("Enter ZIP Code") },
-                modifier = Modifier.fillMaxWidth()
-            )
+        Column {
+            Toolbar(title = "Search Weather Forecast")
 
-            Spacer(modifier = Modifier.height(16.dp)) // Spacer for some space between the TextField and Button
-
-            // Button to initiate the search
-            Button(
-                onClick = {
-                    viewModel.fetchWeatherForecast(zipCode)
-                    showWeather = true
-                },
-                modifier = Modifier.align(Alignment.End) // Align the button to the end
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("Search")
+                // TextField for zip code input
+                OutlinedTextField(
+                    value = zipCode,
+                    onValueChange = { zipCode = it },
+                    label = { Text("Enter ZIP Code") },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(
+                        focusedBorderColor = Color.Black,     // Border color when focused
+                        unfocusedBorderColor = Color.Gray    // Border color when not focused
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp)) // Spacer for some space between the TextField and Button
+
+                // Button to initiate the search
+                Button(
+                    onClick = {
+                        if (zipCode.isNotEmpty()) {
+                            viewModel.fetchWeatherForecast(zipCode)
+                            navController.navigate("weatherForecasts/$zipCode")
+                            //showWeather = true
+                        }
+                    },
+                    modifier = Modifier.align(Alignment.End) // Align the button to the end
+                ) {
+                    Text("Search")
+                }
+
             }
 
-            if (showWeather)
-                WeatherForecastsScreen(viewModel = viewModel, navController = navController)
         }
-
-
     }
 }
 
@@ -96,43 +110,51 @@ fun WeatherForecastsScreen(viewModel: WeatherForecastListViewModel, navControlle
 
     val forecasts = weatherForecasts.value
 
-    // LazyColumn should display loading, error, or success states
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-       // contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Column(
+        modifier = Modifier.fillMaxSize() // Fill the available screen space
     ) {
-        forecasts.let {
-            when (it) {
-                is UiState.Loading -> {
-                    item {
-                        CircularProgressIndicator(
-                            color = Color.Blue,
-                            strokeWidth = 4.dp,
-                            modifier = Modifier.size(48.dp)
-                        )
+        Toolbar(title = "Weather Forecast")
+        // LazyColumn should display loading, error, or success states
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            forecasts.let {
+                when (it) {
+                    is UiState.Loading -> {
+                        item {
+                            CircularProgressIndicator(
+                                color = Color.Blue,
+                                strokeWidth = 4.dp,
+                                modifier = Modifier.size(48.dp)
+                            )
+                        }
                     }
-                }
 
-                is UiState.Success -> {
-                    items(viewModel.filterWeatherForecasts(it.data.list)) { forecast ->
-                        ListItem(
-                            weatherInfo = forecast,
-                            onClick = {
-                                navController.navigate(toWeatherDetails(forecast))
-                            }
-                        )
+                    is UiState.Success -> {
+                        items(viewModel.filterWeatherForecasts(it.data.list)) { forecast ->
+                            ListItem(
+                                weatherInfo = forecast,
+                                onClick = {
+                                    //  navController.navigate(toWeatherDetails(forecast))
+                                    val forecastJson = Gson().toJson(forecast)
+                                    navController.navigate("weatherDetails/$forecastJson")
+
+                                }
+                            )
+                        }
                     }
-                }
 
-                is UiState.Error -> {
-                    item {
-                        Text(
-                            text = "Error loading data: ${it.message}",
-                            color = Color.Red,
-                            modifier = Modifier.padding(16.dp)
-                        )
+                    is UiState.Error -> {
+                        item {
+                            Text(
+                                text = "Error loading data: ${it.message}",
+                                color = Color.Red,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -162,6 +184,25 @@ fun ListItem(weatherInfo: WeatherInfo, onClick: (WeatherInfo) -> Unit) {
         }
     }
 
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun WeatherApp(viewModel: WeatherForecastListViewModel) {
+    val navController = rememberNavController()
+
+    NavHost(navController = navController, startDestination = "weatherForecastSearch") {
+        composable("weatherForecastSearch") {
+            WeatherForecastSearch(viewModel = viewModel, navController = navController)
+        }
+        composable("weatherForecasts/{zipCode}") { _ ->  // Correctly ignore
+            WeatherForecastsScreen(viewModel = viewModel, navController = navController)
+        }
+        composable("weatherDetails/{forecastJson}") { backStackEntry ->
+            val forecastJson = backStackEntry.arguments?.getString("forecastJson") ?: return@composable
+            WeatherDetailsScreen(forecastJson, navController) // Pass the JSON string to your details screen
+        }
+    }
 }
 
 @Preview

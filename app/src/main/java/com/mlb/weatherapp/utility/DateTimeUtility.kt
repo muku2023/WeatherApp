@@ -34,7 +34,7 @@ class DateTimeUtility
 
         @RequiresApi(Build.VERSION_CODES.O)
         fun convertStringToDateTime(dateTimeString: String): LocalDateTime {
-            // Define the format of your input string
+
             val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
             // Parse the string to LocalDateTime

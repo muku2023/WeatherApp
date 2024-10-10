@@ -6,18 +6,11 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.RequiresApi
-import androidx.compose.material.TopAppBar
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
-import com.mlb.weatherapp.ui.base.UiState
-import com.mlb.weatherapp.ui.components.Toolbar
+import com.mlb.weatherapp.ui.screens.viewmodel.WeatherForecastListViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class WeatherForecastListFragment : Fragment() {
@@ -33,7 +26,8 @@ class WeatherForecastListFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             setContent {
-                WeatherForecastSearch(viewModel = viewModel, navController = findNavController())
+                //WeatherForecastSearch(viewModel = viewModel, navController = findNavController())
+                WeatherApp(viewModel = viewModel)
             }
         }
     }

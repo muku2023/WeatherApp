@@ -38,7 +38,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.google.gson.Gson
+import com.mlb.weatherapp.model.Main
+import com.mlb.weatherapp.model.WeatherDetails
 import com.mlb.weatherapp.model.WeatherInfo
+import com.mlb.weatherapp.model.Wind
 import com.mlb.weatherapp.ui.base.UiState
 import com.mlb.weatherapp.ui.components.Toolbar
 import com.mlb.weatherapp.ui.screens.fragments.weatherDetails.WeatherDetailsScreen
@@ -88,7 +91,6 @@ fun WeatherForecastSearch(viewModel: WeatherForecastListViewModel, navController
                         if (zipCode.isNotEmpty()) {
                             viewModel.fetchWeatherForecast(zipCode)
                             navController.navigate("weatherForecasts/$zipCode")
-                            //showWeather = true
                         }
                     },
                     modifier = Modifier.align(Alignment.End) // Align the button to the end
@@ -138,7 +140,6 @@ fun WeatherForecastsScreen(viewModel: WeatherForecastListViewModel, navControlle
                             ListItem(
                                 weatherInfo = forecast,
                                 onClick = {
-                                    //  navController.navigate(toWeatherDetails(forecast))
                                     val forecastJson = Gson().toJson(forecast)
                                     navController.navigate("weatherDetails/$forecastJson")
 
@@ -205,9 +206,15 @@ fun WeatherApp(viewModel: WeatherForecastListViewModel) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview
 @Composable
 fun ListItem_Preview() {
-//    var weatherInfo = WeatherInfo()
-//    ListItem()
+    val main = Main(1000.0,1000.0,1000.0,1000.0,1000, 1, 1, 10, 1.0 )
+    val weatherDetails = WeatherDetails(1, "main", "description", "icon")
+    val list:  List<WeatherDetails> = listOf( weatherDetails)
+    val weatherInfo = WeatherInfo(1728572400, main, list, Wind(0.0,0,0.0), 10000, 100000.0, "2024-10-10 15:00:00", "" )
+
+    weatherInfo.displayDayText = "Today"
+    ListItem(weatherInfo, onClick = {})
 }
